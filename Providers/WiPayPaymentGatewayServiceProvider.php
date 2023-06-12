@@ -15,7 +15,7 @@ class WiPayPaymentGatewayServiceProvider extends ServiceProvider
     /**
      * @var string $moduleNameLower
      */
-    protected $moduleNameLower = 'wipaypoaymentgateway';
+    protected $moduleNameLower = 'wipaypaymentgateway';
 
     /**
      * Boot the application events.

@@ -17,7 +17,7 @@ class WiPayPaymentGatewayAdminPanelController extends Controller
             }
         });
         $wipay = current($wipay);
-        return  view("wipaypoaymentgateway::admin.settings",compact("wipay"));
+        return  view("wipaypaymentgateway::admin.settings",compact("wipay"));
     }
 
     public function settingsUpdate(Request $request){

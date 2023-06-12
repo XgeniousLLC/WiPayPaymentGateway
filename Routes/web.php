@@ -28,7 +28,7 @@ Route::middleware([
     \App\Http\Middleware\Tenant\InitializeTenancyByDomainCustomisedMiddleware::class,
     PreventAccessFromCentralDomains::class
 ])->prefix('wipaypoaymentgateway')->group(function () {
-    Route::post("tenant-price-plan-wipay",[\Modules\WiPayPaymentGateway\Http\Controllers\WiPayPaymentGatewayController::class,"TenantSiteswayIpn"])
+    Route::get("tenant-price-plan-wipay",[\Modules\WiPayPaymentGateway\Http\Controllers\WiPayPaymentGatewayController::class,"TenantSiteswayIpn"])
         ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])
         ->name("wipaypoaymentgateway.tenant.price.plan.ipn");
 
@@ -45,8 +45,7 @@ Route::group(['middleware' => ['auth:admin','adminglobalVariable', 'set_lang'],'
 
 
 Route::group(['middleware' => [
-    'web',
-    InitializeTenancyByDomain::class,
+    \App\Http\Middleware\Tenant\InitializeTenancyByDomainCustomisedMiddleware::class,
     PreventAccessFromCentralDomains::class,
     'auth:admin',
     'tenant_admin_glvar',

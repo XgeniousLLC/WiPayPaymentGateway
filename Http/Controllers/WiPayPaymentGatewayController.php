@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Modules\Wallet\Entities\Wallet;
 use Modules\Wallet\Entities\WalletHistory;
 use Modules\Wallet\Http\Services\WalletService;
@@ -137,13 +138,13 @@ class WiPayPaymentGatewayController extends Controller
 
         //write code for success callback , to receive callback and check it again that it is actually paid or not.
         $payment_data = $this->capturePaymentAndVerifyAgain();
-dd($payment_data);
         if ($payment_data["status"] === "complete"){
             if ($payment_data["order_type"] === "price_plan"){
-                dd($payment_data);
                 $this->runPostPaymentProcessForLandlordPricePlanSuccessPayment($payment_data);
+                //redirect to success page
+                return redirect()->to(route('landlord.frontend.order.payment.success', random_int(111111,999999).$payment_data['order_id'].random_int(111111,999999)));
             }elseif ($payment_data["order_type"] === "deposit"){
-                $this->runPostPaymentProcessForLandlordWalletDepositSuccessPayment($payment_data);
+               return $this->runPostPaymentProcessForLandlordWalletDepositSuccessPayment($payment_data);
                 //todo run order type deposit post payment processes
             }elseif ($payment_data["order_type"] === "shop_checkout"){
                 $this->runPostPaymentProcessForTenantdShopCheckoutSuccessPayment($payment_data);
@@ -169,6 +170,8 @@ dd($payment_data);
             if ($payment_data["order_type"] === "shop_checkout"){
                 $this->runPostPaymentProcessForTenantdShopCheckoutSuccessPayment($payment_data);
                 //todo run order type deposit post payment processes
+                $order_id = random_int(111111,999999) . $payment_data['order_id'] . random_int(111111,999999);
+                return redirect()->route('tenant.user.frontend.order.payment.success',$order_id);
             }
         }
         //write code if the payment verify failed
@@ -193,21 +196,39 @@ dd($payment_data);
         $data = json_decode($data);
 
         if (!empty($hash) && !empty($transaction_id) && !empty($order_id) && $status === 'success'){
-            $paymentLogs = PaymentLogs::find(PaymentGatewayHelpers::unwrapped_id($order_id));
+
+            // add condition
             $charge_amount = 0;
-            if (is_null($paymentLogs)){
-                abort(501,__("order id not found in your database"));
+            if ($data->payment_type === 'price_plan' ){
+                $paymentLogs = PaymentLogs::find(PaymentGatewayHelpers::unwrapped_id($order_id));
+                if (is_null($paymentLogs)){
+                    abort(501,__("order id not found in our database"));
+                }
+                $charge_amount = $paymentLogs->package_price;
             }
-            $charge_amount = $paymentLogs->package_price;
+
+            //todo check if it is wallet or not
+            if ($data->payment_type === 'deposit' && !empty($data->history_id)){
+                $walletHistory = WalletHistory::find($data->history_id);
+                if (is_null($paymentLogs)){
+                    abort(501,__("wallet history id not found in our database"));
+                }
+                $charge_amount = $walletHistory->amount;
+            }
+            if ($data->payment_type === 'shop_checkout'){
+            //todo fetch tenant shop total amount...
+                $shopOrder = ProductOrder::find(PaymentGatewayHelpers::unwrapped_id($order_id ?? ""));
+                if (is_null($shopOrder)){
+                    abort(501,__("shop order id not found in our database"));
+                }
+                $charge_amount = $shopOrder->total_amount;
+            }
 
             $generate_hash = md5($transaction_id.number_format($charge_amount,2).get_static_option('wipay_account_api_key','123'));
 //        $generate_hash = md5($transaction_id.number_format(350,2).get_static_option('wipay_account_number'));
             //todo get database price total
 //        dd($transaction_id,get_static_option('wipay_account_number'));
 
-            if (is_null($paymentLogs)){
-                abort(501,__("order id not found in your database"));
-            }
 //            dd($charge_amount,$paymentLogs,hash_equals($hash,$generate_hash),$hash,$generate_hash,$transaction_id.number_format($charge_amount,2).get_static_option('wipay_account_api_key','123'));
             if (hash_equals($hash,$generate_hash)){
                 return $this->verified_data([
@@ -420,14 +441,14 @@ dd($payment_data);
      * */
     private function runPostPaymentProcessForLandlordWalletDepositSuccessPayment(array $payment_data)
     {
+//        dd($payment_data);
         if (isset($payment_data['status']) && $payment_data['status'] === 'complete'){
             $order_id = $payment_data['order_id'];
             $history_id = $payment_data["history_id"];
             $this->walletDepositUpdateDatabase($order_id, $payment_data['transaction_id'],$history_id);
             $this->walletDepositSendMailToAdmin($order_id);
             $new_order_id =  $order_id;
-
-            //return redirect()->route('landlord.user.wallet.history')->with(['type' => 'success', 'msg' => 'Your wallet successfully credited']);
+            return redirect()->to(route('landlord.user.wallet.history'))->with(['type' => 'success', 'msg' => 'Your wallet successfully credited']);
         }
     }
     /**
@@ -495,6 +516,7 @@ dd($payment_data);
             ]);
 
             Cart::instance("default")->destroy();
+            //todo
 
         }
 
