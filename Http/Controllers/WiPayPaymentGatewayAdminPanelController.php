@@ -34,6 +34,10 @@ class WiPayPaymentGatewayAdminPanelController extends Controller
         update_static_option("wipay_currency",$request->wipay_currency);
         update_static_option("wipay_fee_structure",$request->wipay_fee_structure);
         update_static_option("wipay_country_code",$request->wipay_country_code);
+        update_static_option("wipay_test_mode",$request->wipay_test_mode_status);
+        update_static_option("wipay_status",$request->wipay_status);
+
+        // $jsonModifier->nazmartMetaData->paymentGateway->test_mode = $request?->wipay_test_mode_status === 'on';
 
         if(is_null(tenant())){
             $jsonModifier = json_decode(file_get_contents("core/Modules/WiPayPaymentGateway/module.json"));

@@ -105,7 +105,7 @@ class WiPayPaymentGatewayController extends Controller
         $res = Http::acceptJson()->asForm()->post("https://".strtolower(get_static_option('wipay_country_code','TT')).".wipayfinancial.com/plugins/payments/request",[
             "account_number" => get_static_option('wipay_account_number',"1234567890") , //If environment is sandbox, then you must use the WiPay SANDBOX Account Number 1234567890.
             "currency" => get_static_option("wipay_currency","USD"), // JMD, TTD, USD
-            "environment" => "sandbox" , //live, sandbox,
+            "environment" => get_static_option("wipay_test_mode","sandbox") === "on" ? "sandbox" : "live" , //live, sandbox,
             "fee_structure" => get_static_option('wipay_fee_structure','merchant_absorb'), //customer_pay, merchant_absorb, split, who will pay wipay transaction fee,
             "method" => "credit_card",
             "order_id" => PaymentGatewayHelpers::wrapped_id($paymentInfo['id']), //order_id by application

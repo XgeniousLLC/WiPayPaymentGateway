@@ -4,5 +4,8 @@
         @if(request()->is("plan-order*"))
             document.querySelector('.payment-gateway-wrapper li[data-gateway="wipay"]').style.display = "none";
         @endif
+        @if(empty(get_static_option("wipay_status")))
+            document.querySelector('.payment-gateway-wrapper li[data-gateway="wipay"]').style.display = "none";
+        @endif 
     });
 </script>
